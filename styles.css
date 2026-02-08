@@ -190,3 +190,29 @@ td:nth-child(n+2) {
 
 .positive { color: var(--accent-green); }
 .negative { color: var(--accent-red); }
+
+.hidden-row {
+    display: none;
+}
+
+.show-more-btn {
+    background: transparent;
+    border: 1px solid var(--accent-blue);
+    color: var(--accent-blue);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 10px;
+    transition: all 0.2s;
+}
+
+.show-more-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+.table-wrapper {
+    margin-bottom: 30px;
+}

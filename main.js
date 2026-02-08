@@ -56,18 +56,19 @@ function analyzeData(data) {
         return {
             code: row['Customer Code'],
             name: (row['Name'] || '').trim(),
-            mtdSales: mtdSales,
-            ytdSales: ytdSales,
-            lytdSales: lytdSales,
+            mtdSales: parseFloat(row[' MTD Sales $ ']) || 0,
+            ytdSales: parseFloat(row[' YTD Sales $ ']) || 0,
+            lytdSales: parseFloat(row[' LYTD Sales $ ']) || 0,
             ytdChange: ytdChange,
-            ytdGP: row[' YTD GP $ '] || 0,
-            ytdGPPercent: row['YTD GP %'] || 0,
-            mtdGPPercent: row['MTD GP%'] || 0,
+            ytdGP: parseFloat(row[' YTD GP $ ']) || 0,
+            // Force these to numbers immediately
+            ytdGPPercent: parseFloat(row['YTD GP %']) || 0,
+            mtdGPPercent: parseFloat(row['MTD GP%']) || 0,
             status: status
         };
     });
     
-    const topCustomers = [...customers].sort((a, b) => b.ytdSales - a.ytdSales).slice(0, 10);
+    const topCustomers = [...customers].sort((a, b) => b.ytdSales - a.ytdSales);
     const declining = customers.filter(c => c.status === 'declining').sort((a, b) => a.ytdChange - b.ytdChange);
     const noMTDSales = customers.filter(c => c.mtdSales === 0 && c.lytdSales > 0).sort((a, b) => b.lytdSales - a.lytdSales);
     const lowMargin = customers.filter(c => c.ytdSales > 10000 && c.ytdGPPercent < 25).sort((a, b) => a.ytdGPPercent - b.ytdGPPercent);
@@ -141,99 +142,98 @@ function renderDashboard(analysis) {
                 <h2>⚠️ Priority Actions</h2>
                 
                 <h3>Declining Accounts (${analysis.declining.length})</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th>YTD Sales</th>
-                            <th>Change vs LY</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${analysis.declining.slice(0, 5).map(c => `
-                            <tr>
-                                <td>${c.name}</td>
-                                <td>$${c.ytdSales.toLocaleString()}</td>
-                                <td class="negative">${c.ytdChange.toFixed(1)}%</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table id="declining-table">
+                        <thead>
+                            <tr><th>Customer</th><th>YTD Sales</th><th>Change vs LY</th></tr>
+                        </thead>
+                        <tbody>
+                            ${analysis.declining.map((c, i) => `
+                                <tr class="${i >= 5 ? 'hidden-row' : ''}">
+                                    <td>${c.name}</td>
+                                    <td>$${c.ytdSales.toLocaleString()}</td>
+                                    <td class="negative">${c.ytdChange.toFixed(1)}%</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ${analysis.declining.length > 5 ? `<button class="show-more-btn" onclick="toggleRows(this)">Show All</button>` : ''}
+                </div>
 
                 <h3>No Sales This Month (${analysis.noMTDSales.length})</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th>YTD Sales</th>
-                            <th>LY MTD</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${analysis.noMTDSales.slice(0, 5).map(c => `
-                            <tr>
-                                <td>${c.name}</td>
-                                <td>$${c.ytdSales.toLocaleString()}</td>
-                                <td>$${c.lytdSales.toLocaleString()}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Customer</th><th>YTD Sales</th><th>LY MTD</th></tr>
+                        </thead>
+                        <tbody>
+                            ${analysis.noMTDSales.map((c, i) => `
+                                <tr class="${i >= 5 ? 'hidden-row' : ''}">
+                                    <td>${c.name}</td>
+                                    <td>$${c.ytdSales.toLocaleString()}</td>
+                                    <td>$${c.lytdSales.toLocaleString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ${analysis.noMTDSales.length > 5 ? `<button class="show-more-btn" onclick="toggleRows(this)">Show All</button>` : ''}
+                </div>
 
                 <h3>Low Margin Opportunities (${analysis.lowMargin.length})</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th>YTD Sales</th>
-                            <th>GP%</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${analysis.lowMargin.slice(0, 5).map(c => `
-                            <tr>
-                                <td>${c.name}</td>
-                                <td>$${c.ytdSales.toLocaleString()}</td>
-                                <td>${c.ytdGPPercent.toFixed(1)}%</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Customer</th><th>YTD Sales</th><th>GP%</th></tr>
+                        </thead>
+                        <tbody>
+                            ${analysis.lowMargin.map((c, i) => `
+                                <tr class="${i >= 5 ? 'hidden-row' : ''}">
+                                    <td>${c.name}</td>
+                                    <td>$${c.ytdSales.toLocaleString()}</td>
+                                    <td>${c.ytdGPPercent.toFixed(1)}%</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ${analysis.lowMargin.length > 5 ? `<button class="show-more-btn" onclick="toggleRows(this)">Show All</button>` : ''}
+                </div>
             </div>
 
-            <!-- Top Customers -->
             <div class="section">
-                <h2>Top 10 Customers</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Customer</th>
-                            <th>YTD Sales</th>
-                            <th>vs LY</th>
-                            <th>GP%</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${analysis.topCustomers.map((c, i) => `
+                <h2>All Customers (High to Low)</h2>
+                <div class="table-wrapper">
+                    <table id="top-customers-table">
+                        <thead>
                             <tr>
-                                <td>${i + 1}</td>
-                                <td>${c.name}</td>
-                                <td>$${c.ytdSales.toLocaleString()}</td>
-                                <td class="${c.ytdChange >= 0 ? 'positive' : 'negative'}">
-                                    ${c.ytdChange >= 0 ? '+' : ''}${c.ytdChange.toFixed(1)}%
-                                </td>
-                                <td>${c.ytdGPPercent.toFixed(1)}%</td>
-                                <td>
-                                    <span class="status-pill status-${c.status}">
-                                        ${c.status.toUpperCase()}
-                                    </span>
-                                </td>
+                                <th>Rank</th>
+                                <th>Customer</th>
+                                <th>YTD Sales</th>
+                                <th>vs LY</th>
+                                <th>GP%</th>
+                                <th>Status</th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            ${analysis.topCustomers.map((c, i) => `
+                                <tr class="${i >= 10 ? 'hidden-row' : ''}">
+                                    <td>${i + 1}</td>
+                                    <td>${c.name}</td>
+                                    <td>$${c.ytdSales.toLocaleString()}</td>
+                                    <td class="${c.ytdChange >= 0 ? 'positive' : 'negative'}">
+                                        ${c.ytdChange >= 0 ? '+' : ''}${c.ytdChange.toFixed(1)}%
+                                    </td>
+                                    <td>${c.ytdGPPercent.toFixed(1)}%</td>
+                                    <td>
+                                        <span class="status-pill status-${c.status}">
+                                            ${c.status.toUpperCase()}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ${analysis.topCustomers.length > 10 ? `<button class="show-more-btn" onclick="toggleRows(this)">Show All</button>` : ''}
+                </div>
             </div>
         </div>
     `;
@@ -244,6 +244,7 @@ function renderDashboard(analysis) {
 }
 
 function renderCharts(analysis) {
+    // 1. Global Chart Configuration
     Chart.defaults.color = '#94a3b8';
     Chart.defaults.font.family = "'Inter', sans-serif";
     Chart.defaults.borderColor = '#334155';
@@ -270,15 +271,19 @@ function renderCharts(analysis) {
         }
     };
 
+    // 2. Top 10 Revenue Drivers (Bar Chart)
     const topCtx = document.getElementById('topCustomersChart');
     if (topCtx) {
+        // We slice to 10 here so the chart doesn't get crowded
+        const topTenData = analysis.topCustomers.slice(0, 10);
+        
         chartInstances.push(new Chart(topCtx, {
             type: 'bar',
             data: {
-                labels: analysis.topCustomers.map(c => c.name.substring(0, 15)),
+                labels: topTenData.map(c => c.name.substring(0, 15)),
                 datasets: [{
                     label: 'YTD Sales',
-                    data: analysis.topCustomers.map(c => c.ytdSales),
+                    data: topTenData.map(c => c.ytdSales),
                     backgroundColor: '#3b82f6',
                     borderRadius: 4,
                     barPercentage: 0.7
@@ -294,6 +299,7 @@ function renderCharts(analysis) {
         }));
     }
 
+    // 3. Year over Year Comparison (Grouped Bar Chart)
     const perfCtx = document.getElementById('performanceChart');
     if (perfCtx) {
         chartInstances.push(new Chart(perfCtx, {
@@ -309,6 +315,7 @@ function renderCharts(analysis) {
                     },
                     {
                         label: 'Last Year',
+                        // Note: LY GP is estimated based on current GP% if not explicitly in data
                         data: [analysis.totals.lytdSales, analysis.totals.lytdSales * (analysis.totals.ytdGPPercent / 100)],
                         backgroundColor: '#334155',
                         borderRadius: 4
@@ -325,15 +332,19 @@ function renderCharts(analysis) {
         }));
     }
 
+    // 4. Margin Efficiency (Line Chart)
     const marginCtx = document.getElementById('marginChart');
     if (marginCtx) {
+        // Again, slicing to 10 to keep the line chart readable
+        const topTenData = analysis.topCustomers.slice(0, 10);
+
         chartInstances.push(new Chart(marginCtx, {
             type: 'line',
             data: {
-                labels: analysis.topCustomers.map(c => c.name.substring(0, 10)),
+                labels: topTenData.map(c => c.name.substring(0, 10)),
                 datasets: [{
                     label: 'GP %',
-                    data: analysis.topCustomers.map(c => c.ytdGPPercent),
+                    data: topTenData.map(c => c.ytdGPPercent),
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 2,
@@ -348,7 +359,7 @@ function renderCharts(analysis) {
                 ...commonOptions,
                 plugins: {
                     ...commonOptions.plugins,
-                    title: { display: true, text: 'Margin Efficiency', align: 'start', color: '#f1f5f9', font: {size: 16} }
+                    title: { display: true, text: 'Margin Efficiency (Top 10)', align: 'start', color: '#f1f5f9', font: {size: 16} }
                 },
                 scales: {
                     y: { ...commonOptions.scales.y, beginAtZero: true }
@@ -357,6 +368,7 @@ function renderCharts(analysis) {
         }));
     }
 
+    // 5. Account Health (Doughnut Chart)
     const statusCtx = document.getElementById('statusChart');
     if (statusCtx) {
         const statusCounts = {
@@ -384,9 +396,21 @@ function renderCharts(analysis) {
                 cutout: '70%',
                 plugins: {
                     legend: { position: 'right', labels: { color: '#f1f5f9', usePointStyle: true } },
-                    title: { display: true, text: 'Account Health', align: 'start', color: '#f1f5f9', font: {size: 16} }
+                    title: { display: true, text: 'Overall Account Health', align: 'start', color: '#f1f5f9', font: {size: 16} }
                 }
             }
         }));
     }
+}
+
+function toggleRows(btn) {
+    const table = btn.parentElement.querySelector('table');
+    const hiddenRows = table.querySelectorAll('.hidden-row');
+    const isExpanded = btn.innerText === 'Show Less';
+
+    hiddenRows.forEach(row => {
+        row.style.display = isExpanded ? 'none' : 'table-row';
+    });
+
+    btn.innerText = isExpanded ? 'Show All' : 'Show Less';
 }
