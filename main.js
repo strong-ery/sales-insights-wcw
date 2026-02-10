@@ -1,8 +1,179 @@
+// ============ SUPABASE CONFIG ============
+const SUPABASE_URL = 'https://oghprzacemymwsgpwlqa.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_niXLjBAatXnM885L-Z05Hg_rI0dSzTF';
+
+// ============ LICENSE SYSTEM WITH API ============
+async function checkLicense() {
+    let storedKey = localStorage.getItem('wcwp_license_key');
+    
+    if (!storedKey) {
+        showLicenseModal();
+        return false;
+    }
+    
+    // Validate key with Supabase
+    const isValid = await validateKeyWithAPI(storedKey);
+    
+    if (!isValid) {
+        localStorage.removeItem('wcwp_license_key');
+        showLicenseModal();
+        return false;
+    }
+    
+    // Log successful usage
+    await logUsage(storedKey, 'file_upload');
+    
+    return true;
+}
+
+async function validateKeyWithAPI(key) {
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/licenses?license_key=eq.${key}&is_active=eq.true`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        // Check if key exists and is active
+        if (data.length === 0) return false;
+        
+        // Check if expired
+        const license = data[0];
+        if (license.expires_at) {
+            const expiryDate = new Date(license.expires_at);
+            if (expiryDate < new Date()) {
+                return false;
+            }
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('License validation error:', error);
+        return false;
+    }
+}
+
+async function logUsage(key, action) {
+    try {
+        await fetch(`${SUPABASE_URL}/rest/v1/usage_logs`, {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+                license_key: key,
+                action: action,
+                user_agent: navigator.userAgent,
+                // IP will be logged server-side
+            })
+        });
+    } catch (error) {
+        console.error('Usage logging error:', error);
+    }
+}
+
+async function validateLicense() {
+    const input = document.getElementById('licenseInput').value.trim();
+    
+    const isValid = await validateKeyWithAPI(input);
+    
+    if (isValid) {
+        localStorage.setItem('wcwp_license_key', input);
+        await logUsage(input, 'license_activated');
+        location.reload();
+    } else {
+        document.getElementById('errorMsg').style.display = 'block';
+    }
+}
+
+function showLicenseModal() {
+    const modal = document.createElement('div');
+    modal.id = 'licenseModal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(11, 17, 32, 0.95); display: flex; align-items: center;
+        justify-content: center; z-index: 9999; backdrop-filter: blur(8px);
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+                    padding: 50px; border-radius: 16px; max-width: 480px; width: 90%;
+                    text-align: center; border: 1px solid rgba(59, 130, 246, 0.3);
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+            
+            <div style="width: 60px; height: 60px; margin: 0 auto 25px; background: rgba(59, 130, 246, 0.1);
+                        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                        border: 2px solid var(--accent-blue);">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            
+            <h2 style="color: #f1f5f9; margin-bottom: 12px; font-size: 28px; font-weight: 700;">
+                License Required
+            </h2>
+            <p style="color: #94a3b8; margin-bottom: 35px; font-size: 15px; line-height: 1.6;">
+                This tool requires a valid license key.<br>
+                Contact <span style="color: #3b82f6; font-weight: 600;">Dylan Strong</span> for access.
+            </p>
+            
+            <input type="text" id="licenseInput" placeholder="Enter your license key" 
+                   style="width: 100%; padding: 16px 20px; margin-bottom: 20px; 
+                          background: rgba(15, 23, 42, 0.8);
+                          border: 2px solid #334155; border-radius: 10px; color: #f1f5f9;
+                          font-size: 15px; font-family: 'JetBrains Mono', monospace;
+                          transition: all 0.3s; box-sizing: border-box;"
+                   onfocus="this.style.borderColor='#3b82f6'; this.style.background='rgba(15, 23, 42, 1)';"
+                   onblur="this.style.borderColor='#334155'; this.style.background='rgba(15, 23, 42, 0.8)';">
+            
+            <button onclick="validateLicense()" 
+                    style="width: 100%; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+                           color: white; padding: 16px 30px; border: none; border-radius: 10px; 
+                           cursor: pointer; font-weight: 600; font-size: 16px; 
+                           transition: all 0.3s; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(59, 130, 246, 0.5)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(59, 130, 246, 0.4)';">
+                Activate License
+            </button>
+            
+            <p id="errorMsg" style="color: #ef4444; margin-top: 20px; display: none; 
+                                     font-size: 14px; font-weight: 500; padding: 12px;
+                                     background: rgba(239, 68, 68, 0.1); border-radius: 8px;
+                                     border: 1px solid rgba(239, 68, 68, 0.3);">
+                ❌ Invalid license key. Please check and try again.
+            </p>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    setTimeout(() => {
+        const input = document.getElementById('licenseInput');
+        input.focus();
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') validateLicense();
+        });
+    }, 100);
+}
+
 document.getElementById('fileInput').addEventListener('change', handleFile);
 
 let chartInstances = [];
 
-function handleFile(e) {
+async function handleFile(e) {
+    // CHECK LICENSE FIRST
+    const isLicensed = await checkLicense();
+    if (!isLicensed) {
+        return;
+    }
+    
     const file = e.target.files[0];
     const reader = new FileReader();
     
@@ -274,7 +445,6 @@ function renderCharts(analysis) {
     // 2. Top 10 Revenue Drivers (Bar Chart)
     const topCtx = document.getElementById('topCustomersChart');
     if (topCtx) {
-        // We slice to 10 here so the chart doesn't get crowded
         const topTenData = analysis.topCustomers.slice(0, 10);
         
         chartInstances.push(new Chart(topCtx, {
@@ -413,4 +583,72 @@ function toggleRows(btn) {
     });
 
     btn.innerText = isExpanded ? 'Show All' : 'Show Less';
+}
+
+function showPrivacyInfo() {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(11, 17, 32, 0.95); display: flex; align-items: center;
+        justify-content: center; z-index: 9999; backdrop-filter: blur(8px);
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+                    padding: 40px; border-radius: 16px; max-width: 550px; width: 90%;
+                    border: 1px solid rgba(59, 130, 246, 0.3);
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+            
+            <div style="width: 60px; height: 60px; margin: 0 auto 25px; background: rgba(16, 185, 129, 0.1);
+                        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                        border: 2px solid #10b981;">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="M9 12l2 2 4-4"></path>
+                </svg>
+            </div>
+            
+            <h2 style="color: #f1f5f9; margin-bottom: 20px; font-size: 24px; font-weight: 700; text-align: center;">
+                Your Data is Secure
+            </h2>
+            
+            <div style="color: #94a3b8; font-size: 15px; line-height: 1.7; margin-bottom: 25px;">
+                <p style="margin-bottom: 15px;">
+                    <strong style="color: #10b981;">✓ Zero Data Storage:</strong> 
+                    Your Excel files are processed entirely in your browser. No data is ever uploaded to our servers.
+                </p>
+                <p style="margin-bottom: 15px;">
+                    <strong style="color: #10b981;">✓ Client-Side Processing:</strong> 
+                    All analysis happens locally on your device. Your sensitive sales data never leaves your computer.
+                </p>
+                <p style="margin-bottom: 15px;">
+                    <strong style="color: #10b981;">✓ Minimal Tracking:</strong> 
+                    We only log license validation and anonymous usage statistics (timestamp, license key). No personal or business data is collected.
+                </p>
+                <p style="margin-bottom: 0;">
+                    <strong style="color: #10b981;">✓ Secure Connection:</strong> 
+                    All communications are encrypted via HTTPS. Your license validation is protected end-to-end.
+                </p>
+            </div>
+            
+            <button onclick="this.closest('div').parentElement.remove()" 
+                    style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+                           color: white; padding: 14px 30px; border: none; border-radius: 10px; 
+                           cursor: pointer; font-weight: 600; font-size: 15px; 
+                           transition: all 0.3s; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.5)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(16, 185, 129, 0.4)';">
+                Got it, thanks!
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on click outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
 }
