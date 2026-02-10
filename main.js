@@ -1,8 +1,6 @@
-// ============ SUPABASE CONFIG ============
 const SUPABASE_URL = 'https://oghprzacemymwsgpwlqa.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niXLjBAatXnM885L-Z05Hg_rI0dSzTF';
 
-// ============ LICENSE SYSTEM WITH API ============
 async function checkLicense() {
     let storedKey = localStorage.getItem('wcwp_license_key');
     
@@ -11,7 +9,6 @@ async function checkLicense() {
         return false;
     }
     
-    // Validate key with Supabase
     const isValid = await validateKeyWithAPI(storedKey);
     
     if (!isValid) {
@@ -20,7 +17,6 @@ async function checkLicense() {
         return false;
     }
     
-    // Log successful usage
     await logUsage(storedKey, 'file_upload');
     
     return true;
@@ -37,10 +33,8 @@ async function validateKeyWithAPI(key) {
         
         const data = await response.json();
         
-        // Check if key exists and is active
         if (data.length === 0) return false;
         
-        // Check if expired
         const license = data[0];
         if (license.expires_at) {
             const expiryDate = new Date(license.expires_at);
@@ -58,14 +52,12 @@ async function validateKeyWithAPI(key) {
 
 async function logUsage(key, action) {
     try {
-        // Get IP address from a free service
         let ipAddress = null;
         try {
             const ipResponse = await fetch('https://api.ipify.org?format=json');
             const ipData = await ipResponse.json();
             ipAddress = ipData.ip;
         } catch (e) {
-            // If IP fetch fails, continue without it
             ipAddress = 'unavailable';
         }
         
@@ -174,7 +166,6 @@ function showLicenseModal() {
     }, 100);
 }
 
-// ============ DATA VALIDATION & ERROR POPUP ============
 function showDataErrorModal(errorType, details = "") {
     const modal = document.createElement('div');
     modal.id = 'dataErrorModal';
@@ -259,17 +250,14 @@ let currentAnalysis = null;
 let currentDateInfo = null;
 
 async function handleFile(e) {
-    // CHECK LICENSE FIRST
-    const isLicensed = await checkLicense();
-    if (!isLicensed) {
-        return;
-    }
+    if (!await checkLicense()) return;
     
     const file = e.target.files[0];
     if (!file) return;
 
+    showLoading();
+
     const fileName = file.name;
-    // Extract date from filename
     const dateInfo = extractDateFromFilename(fileName);
     
     const reader = new FileReader();
@@ -278,27 +266,24 @@ async function handleFile(e) {
         try {
             const data = new Uint8Array(event.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
             
-            if (jsonData.length === 0) {
-                showDataErrorModal("The file appears to be empty.");
-                return;
-            }
+            if (jsonData.length === 0) throw new Error("The file appears to be empty.");
 
             const cleanData = cleanSalesData(jsonData);
-            
-            if (cleanData.length === 0) {
-                showDataErrorModal("No valid customer records found.", "Ensure 'Customer Code' and 'Salesman No' headers are present.");
-                return;
-            }
+            if (cleanData.length === 0) throw new Error("No valid customer records found. Check headers.");
 
             const analysis = analyzeData(cleanData);
-            renderDashboard(analysis, dateInfo);
+            
+            setTimeout(() => {
+                renderDashboard(analysis, dateInfo);
+                hideLoading();
+            }, 800);
 
         } catch (err) {
+            hideLoading();
             if(err.message !== "ValidationFailed") {
                 showDataErrorModal("Failed to process file.", err.message);
             }
@@ -309,7 +294,6 @@ async function handleFile(e) {
 }
 
 function extractDateFromFilename(filename) {
-    // Try to extract date patterns like: PETER12.31.25.xlsx or PETER12_31_25.xlsx
     console.log('Extracting date from filename:', filename);
     const match = filename.match(/(\d{1,2})[._](\d{1,2})[._](\d{2})/);
     console.log('Regex match result:', match);
@@ -319,7 +303,6 @@ function extractDateFromFilename(filename) {
         const day = parseInt(match[2]);
         let year = parseInt(match[3]);
         
-        // Convert 2-digit year to 4-digit (25 -> 2025)
         year = year < 50 ? 2000 + year : 1900 + year;
         
         const date = new Date(year, month - 1, day);
@@ -333,12 +316,10 @@ function extractDateFromFilename(filename) {
             }),
             shortDate: `${month}/${day}/${year}`,
             periodEnd: date,
-            // Assume period is YTD (Jan 1 to this date)
             periodStart: new Date(year, 0, 1)
         };
     }
     
-    // Fallback if no date found in filename
     return {
         date: new Date(),
         formatted: 'Unknown Date',
@@ -349,35 +330,42 @@ function extractDateFromFilename(filename) {
 }
 
 function cleanSalesData(data) {
-    return data.filter(row => {
-        return row['Customer Code'] && 
-               !String(row['Salesman No']).includes('Total') &&
-               row['Salesman No'] !== 'Grand Total';
+    return data.map(row => {
+        const cleanRow = {};
+        for (let key in row) {
+
+            if (key) cleanRow[key.trim()] = row[key];
+        }
+        return cleanRow;
+    }).filter(row => {
+        const salesmanNo = String(row['Salesman No'] || '');
+
+        const hasCustomerCode = row['Customer Code'] !== undefined && row['Customer Code'] !== null && row['Customer Code'] !== '';
+        
+        return hasCustomerCode && 
+               !salesmanNo.toLowerCase().includes('total') && 
+               salesmanNo.toLowerCase() !== 'grand total';
     });
 }
 
 function analyzeData(data) {
-    const totals = {
-        mtdSales: data.reduce((sum, row) => sum + (parseFloat(row[' MTD Sales $ ']) || 0), 0),
-        ytdSales: data.reduce((sum, row) => sum + (parseFloat(row[' YTD Sales $ ']) || 0), 0),
-        lytdSales: data.reduce((sum, row) => sum + (parseFloat(row[' LYTD Sales $ ']) || 0), 0),
-        mtdGP: data.reduce((sum, row) => sum + (parseFloat(row[' MTD GP $ ']) || 0), 0),
-        ytdGP: data.reduce((sum, row) => sum + (parseFloat(row[' YTD GP $ ']) || 0), 0)
+    const parseNum = (val) => {
+        if (typeof val === 'number') return val;
+        if (!val) return 0;
+        const cleaned = String(val).replace(/[$,%]/g, '').trim();
+        return parseFloat(cleaned) || 0;
     };
-    
-    // Check for NaN or Garbage data in critical totals
-    if (isNaN(totals.ytdSales) || totals.ytdSales === 0) {
-        showDataErrorModal("Calculation Error", "Sales values contain text or invalid characters (NaN).");
-        throw new Error("ValidationFailed");
-    }
-    
-    totals.ytdChange = ((totals.ytdSales - totals.lytdSales) / totals.lytdSales * 100);
-    totals.ytdGPPercent = (totals.ytdGP / totals.ytdSales * 100);
-    
+
     const customers = data.map(row => {
-        const ytdSales = parseFloat(row[' YTD Sales $ ']) || 0;
-        const lytdSales = parseFloat(row[' LYTD Sales $ ']) || 0;
-        const mtdSales = parseFloat(row[' MTD Sales $ ']) || 0;
+        const mtdSales = parseNum(row['MTD Sales $'] || row['MTD Sales']);
+        const ytdSales = parseNum(row['YTD Sales $'] || row['YTD Sales']);
+        const lytdSales = parseNum(row['LYTD Sales $'] || row['LYTD Sales']);
+        const mtdGP = parseNum(row['MTD GP $'] || row['MTD GP']);
+        const ytdGP = parseNum(row['YTD GP $'] || row['YTD GP']);
+        
+        const ytdGPPercent = parseNum(row['YTD GP %'] || row['YTD GP%'] || row['GP%']);
+        const mtdGPPercent = parseNum(row['MTD GP %'] || row['MTD GP%']);
+
         const ytdChange = lytdSales > 0 ? ((ytdSales - lytdSales) / lytdSales * 100) : 0;
         
         let status = 'flat';
@@ -386,18 +374,38 @@ function analyzeData(data) {
         
         return {
             code: row['Customer Code'],
-            name: (row['Name'] || '').trim(),
-            mtdSales: mtdSales,
-            ytdSales: ytdSales,
-            lytdSales: lytdSales,
-            ytdChange: ytdChange,
-            ytdGP: parseFloat(row[' YTD GP $ ']) || 0,
-            ytdGPPercent: parseFloat(row['YTD GP %']) || 0,
-            mtdGPPercent: parseFloat(row['MTD GP%']) || 0,
-            status: status
+            name: String(row['Name'] || '').trim(),
+            mtdSales,
+            ytdSales,
+            lytdSales,
+            ytdChange,
+            ytdGP,
+            mtdGP,
+            ytdGPPercent,
+            mtdGPPercent,
+            status
         };
     });
+
+    const totals = {
+        mtdSales: customers.reduce((sum, c) => sum + c.mtdSales, 0),
+        ytdSales: customers.reduce((sum, c) => sum + c.ytdSales, 0),
+        lytdSales: customers.reduce((sum, c) => sum + c.lytdSales, 0),
+        mtdGP: customers.reduce((sum, c) => sum + c.mtdGP, 0),
+        ytdGP: customers.reduce((sum, c) => sum + c.ytdGP, 0)
+    };
+
+    totals.ytdChange = totals.lytdSales > 0 
+        ? ((totals.ytdSales - totals.lytdSales) / totals.lytdSales * 100) 
+        : (totals.ytdSales > 0 ? 100 : 0);
     
+    totals.ytdGPPercent = totals.ytdSales > 0 ? (totals.ytdGP / totals.ytdSales * 100) : 0;
+
+    if (totals.ytdSales === 0) {
+        showDataErrorModal("Data Error", "No sales records could be read.");
+        throw new Error("ValidationFailed");
+    }
+
     const topCustomers = [...customers].sort((a, b) => b.ytdSales - a.ytdSales);
     const declining = customers.filter(c => c.status === 'declining').sort((a, b) => a.ytdChange - b.ytdChange);
     const noMTDSales = customers.filter(c => c.mtdSales === 0 && c.lytdSales > 0).sort((a, b) => b.lytdSales - a.lytdSales);
@@ -411,6 +419,38 @@ function analyzeData(data) {
         noMTDSales,
         lowMargin
     };
+}
+
+function renderCustomerRows(data, applyLimit) {
+    const tbody = document.querySelector('#top-customers-table tbody');
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--text-muted);">No results found</td></tr>';
+        return;
+    }
+
+    const html = data.map((c, i) => {
+        const isHidden = applyLimit && i >= 10;
+        
+        return `
+            <tr class="${isHidden ? 'hidden-row' : ''}">
+                <td>${i + 1}</td>
+                <td>${c.name}</td>
+                <td>$${c.ytdSales.toLocaleString()}</td>
+                <td class="${c.ytdChange >= 0 ? 'positive' : 'negative'}">
+                    ${c.ytdChange >= 0 ? '+' : ''}${c.ytdChange.toFixed(1)}%
+                </td>
+                <td>${c.ytdGPPercent.toFixed(1)}%</td>
+                <td>
+                    <span class="status-pill status-${c.status}">
+                        ${c.status.toUpperCase()}
+                    </span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    tbody.innerHTML = html;
 }
 
 function downloadReport() {
@@ -441,7 +481,6 @@ function downloadReport() {
     ];
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
     
-    // Set column widths for Summary (Column A and B)
     summarySheet['!cols'] = [{ wch: 25 }, { wch: 20 }];
     
     XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
@@ -464,7 +503,6 @@ function downloadReport() {
     
     XLSX.utils.book_append_sheet(wb, allCustomersSheet, 'All Customers');
     
-    // --- Helper for formatting other sheets ---
     const actionCols = [{ wch: 40 }, { wch: 15 }, { wch: 15 }];
 
     // Sheet 3: Declining Accounts
@@ -509,8 +547,7 @@ function downloadReport() {
 
 function renderDashboard(analysis, dateInfo) {
     const output = document.getElementById('output');
-    
-    // Store analysis globally for export
+
     currentAnalysis = analysis;
     currentDateInfo = dateInfo;
     
@@ -647,7 +684,15 @@ function renderDashboard(analysis, dateInfo) {
             </div>
 
             <div class="section">
-                <h2>All Customers (High to Low)</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">All Customers (High to Low)</h2>
+                    <div class="search-wrapper" style="margin: 0;">
+                        <input type="text" 
+                            class="search-input" 
+                            placeholder="Search customer name..." 
+                            onkeyup="filterTable(this)">
+                    </div>
+                </div>
                 <div class="table-wrapper">
                     <table id="top-customers-table">
                         <thead>
@@ -847,18 +892,6 @@ function renderCharts(analysis) {
     }
 }
 
-function toggleRows(btn) {
-    const table = btn.parentElement.querySelector('table');
-    const hiddenRows = table.querySelectorAll('.hidden-row');
-    const isExpanded = btn.innerText === 'Show Less';
-
-    hiddenRows.forEach(row => {
-        row.style.display = isExpanded ? 'none' : 'table-row';
-    });
-
-    btn.innerText = isExpanded ? 'Show All' : 'Show Less';
-}
-
 function showPrivacyInfo() {
     const modal = document.createElement('div');
     modal.style.cssText = `
@@ -918,11 +951,90 @@ function showPrivacyInfo() {
     `;
     
     document.body.appendChild(modal);
-    
-    // Close on click outside
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.remove();
         }
     });
+}
+
+function filterTable(input) {
+    const filter = input.value.trim().toUpperCase();
+    const table = document.getElementById("top-customers-table");
+    const tr = table.getElementsByTagName("tr");
+    const btn = table.nextElementSibling;
+
+    if (btn && btn.classList.contains('show-more-btn')) {
+        btn.style.display = filter.length > 0 ? "none" : "block";
+    }
+
+    for (let i = 1; i < tr.length; i++) {
+        const tdName = tr[i].getElementsByTagName("td")[1];
+        
+        if (tdName) {
+            const nameText = (tdName.textContent || tdName.innerText).toUpperCase();
+            const matches = nameText.includes(filter);
+
+            if (filter.length > 0) {
+                tr[i].style.display = matches ? "table-row" : "none";
+            } else {
+                const isLimitRow = tr[i].classList.contains('hidden-row');
+                const isExpanded = btn && btn.innerText === 'Show Less';
+                
+                if (isLimitRow && !isExpanded) {
+                    tr[i].style.display = "none";
+                } else {
+                    tr[i].style.display = "";
+                }
+            }
+        }
+    }
+}
+
+function handleSearch(e) {
+    const term = e.target.value.trim().toLowerCase();
+    const btn = document.querySelector('#top-customers-table + .show-more-btn');
+
+    if (!term) {
+        renderCustomerRows(currentAnalysis.topCustomers, true);
+        if (btn) { btn.style.display = 'block'; btn.innerText = 'Show All'; }
+        return;
+    }
+
+    const filtered = currentAnalysis.topCustomers.filter(c => 
+        c.name.toLowerCase().includes(term) || 
+        c.code.toString().includes(term)
+    );
+
+    renderCustomerRows(filtered, false);
+    if (btn) btn.style.display = 'none';
+}
+
+function toggleRows(btn) {
+    const table = btn.parentElement.querySelector('table');
+    const rows = table.querySelectorAll('tr');
+    const isExpanding = btn.innerText === 'Show All';
+
+    for (let i = 11; i < rows.length; i++) {
+        rows[i].style.display = isExpanding ? 'table-row' : 'none';
+    }
+
+    btn.innerText = isExpanding ? 'Show Less' : 'Show All';
+}
+
+function showLoading() {
+    const loader = document.createElement('div');
+    loader.id = 'loadingOverlay';
+    loader.className = 'loader-overlay';
+    loader.innerHTML = `
+        <div class="spinner"></div>
+        <div class="loading-text">Analyzing Sales Data...</div>
+    `;
+    document.body.appendChild(loader);
+}
+
+function hideLoading() {
+    const loader = document.getElementById('loadingOverlay');
+    if (loader) loader.remove();
 }
