@@ -223,3 +223,31 @@ td:nth-child(n+2) {
     color: var(--accent-blue);
     font-size: 0.8rem;
 }
+
+.template-preview-wrapper {
+    background: #0f172a;
+    border-radius: 8px;
+    padding: 2px;
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.template-table {
+    width: 100%;
+    margin-bottom: 0 !important;
+    font-size: 11px !important;
+    border: none !important;
+}
+
+.template-table th {
+    padding: 10px !important;
+    background: #1e293b !important;
+    white-space: nowrap;
+}
+
+.template-table td {
+    padding: 8px 10px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    color: var(--text-muted) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.02) !important;
+}

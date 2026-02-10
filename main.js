@@ -155,9 +155,9 @@ function showLicenseModal() {
             </button>
             
             <p id="errorMsg" style="color: #ef4444; margin-top: 20px; display: none; 
-                                     font-size: 14px; font-weight: 500; padding: 12px;
-                                     background: rgba(239, 68, 68, 0.1); border-radius: 8px;
-                                     border: 1px solid rgba(239, 68, 68, 0.3);">
+                                    font-size: 14px; font-weight: 500; padding: 12px;
+                                    background: rgba(239, 68, 68, 0.1); border-radius: 8px;
+                                    border: 1px solid rgba(239, 68, 68, 0.3);">
                 ❌ Invalid license key. Please check and try again.
             </p>
         </div>
@@ -174,9 +174,89 @@ function showLicenseModal() {
     }, 100);
 }
 
+// ============ DATA VALIDATION & ERROR POPUP ============
+function showDataErrorModal(errorType, details = "") {
+    const modal = document.createElement('div');
+    modal.id = 'dataErrorModal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(11, 17, 32, 0.96); display: flex; align-items: center;
+        justify-content: center; z-index: 10000; backdrop-filter: blur(10px);
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+                    padding: 40px; border-radius: 20px; max-width: 650px; width: 95%;
+                    border: 1px solid rgba(239, 68, 68, 0.3);
+                    box-shadow: 0 25px 70px rgba(0,0,0,0.6); position: relative;">
+            
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="width: 50px; height: 50px; margin: 0 auto 15px; background: rgba(239, 68, 68, 0.1);
+                            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                            border: 2px solid var(--accent-red);">
+                    <span style="font-size: 24px;">⚠️</span>
+                </div>
+                <h2 style="color: #f1f5f9; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">Invalid Data Detected</h2>
+                <p style="color: var(--text-muted); font-size: 14px; margin: 0;">${errorType}</p>
+                <p style="color: var(--accent-red); font-size: 12px; font-family: 'JetBrains Mono', monospace; margin-top: 5px;">${details}</p>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <h4 style="color: var(--accent-blue); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+                    Required Data Format (Example)
+                </h4>
+                <div class="template-preview-wrapper">
+                    <table class="template-table">
+                        <thead>
+                            <tr>
+                                <th>Salesman No</th>
+                                <th>Customer Code</th>
+                                <th>Name</th>
+                                <th>YTD Sales $</th>
+                                <th>YTD GP %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>10</td>
+                                <td>000001</td>
+                                <td>Example Customer 1</td>
+                                <td>50230.00</td>
+                                <td>28.5</td>
+                            </tr>
+                            <tr>
+                                <td>10</td>
+                                <td>000002</td>
+                                <td>Example Customer 2</td>
+                                <td>12400.50</td>
+                                <td>15.2</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p style="color: var(--text-muted); font-size: 12px; margin-top: 10px; line-height: 1.4;">
+                    <b>Make sure your data follows our expectations:</b> Check for missing headers, text inside price columns, or unreadable "NaN" values.
+                </p>
+            </div>
+            
+            <button onclick="this.closest('#dataErrorModal').remove()" 
+                    style="width: 100%; background: var(--bg-row-hover); color: white; padding: 14px; 
+                           border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; 
+                           font-weight: 600; transition: all 0.2s;"
+                    onmouseover="this.style.background='var(--accent-blue)'"
+                    onmouseout="this.style.background='var(--bg-row-hover)'">
+                Try Another File
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
 document.getElementById('fileInput').addEventListener('change', handleFile);
 
 let chartInstances = [];
+let currentAnalysis = null;
+let currentDateInfo = null;
 
 async function handleFile(e) {
     // CHECK LICENSE FIRST
@@ -186,25 +266,43 @@ async function handleFile(e) {
     }
     
     const file = e.target.files[0];
+    if (!file) return;
+
     const fileName = file.name;
-    
     // Extract date from filename
     const dateInfo = extractDateFromFilename(fileName);
     
     const reader = new FileReader();
     
     reader.onload = function(event) {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        
-        const cleanData = cleanSalesData(jsonData);
-        const analysis = analyzeData(cleanData);
-        
-        renderDashboard(analysis, dateInfo);
+        try {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            
+            if (jsonData.length === 0) {
+                showDataErrorModal("The file appears to be empty.");
+                return;
+            }
+
+            const cleanData = cleanSalesData(jsonData);
+            
+            if (cleanData.length === 0) {
+                showDataErrorModal("No valid customer records found.", "Ensure 'Customer Code' and 'Salesman No' headers are present.");
+                return;
+            }
+
+            const analysis = analyzeData(cleanData);
+            renderDashboard(analysis, dateInfo);
+
+        } catch (err) {
+            if(err.message !== "ValidationFailed") {
+                showDataErrorModal("Failed to process file.", err.message);
+            }
+        }
     };
     
     reader.readAsArrayBuffer(file);
@@ -212,10 +310,7 @@ async function handleFile(e) {
 
 function extractDateFromFilename(filename) {
     // Try to extract date patterns like: PETER12.31.25.xlsx or PETER12_31_25.xlsx
-    // Pattern: NAME + MM.DD.YY or MM_DD_YY + .xlsx
-    
     console.log('Extracting date from filename:', filename);
-    // Match dates with dots OR underscores
     const match = filename.match(/(\d{1,2})[._](\d{1,2})[._](\d{2})/);
     console.log('Regex match result:', match);
     
@@ -263,20 +358,26 @@ function cleanSalesData(data) {
 
 function analyzeData(data) {
     const totals = {
-        mtdSales: data.reduce((sum, row) => sum + (row[' MTD Sales $ '] || 0), 0),
-        ytdSales: data.reduce((sum, row) => sum + (row[' YTD Sales $ '] || 0), 0),
-        lytdSales: data.reduce((sum, row) => sum + (row[' LYTD Sales $ '] || 0), 0),
-        mtdGP: data.reduce((sum, row) => sum + (row[' MTD GP $ '] || 0), 0),
-        ytdGP: data.reduce((sum, row) => sum + (row[' YTD GP $ '] || 0), 0)
+        mtdSales: data.reduce((sum, row) => sum + (parseFloat(row[' MTD Sales $ ']) || 0), 0),
+        ytdSales: data.reduce((sum, row) => sum + (parseFloat(row[' YTD Sales $ ']) || 0), 0),
+        lytdSales: data.reduce((sum, row) => sum + (parseFloat(row[' LYTD Sales $ ']) || 0), 0),
+        mtdGP: data.reduce((sum, row) => sum + (parseFloat(row[' MTD GP $ ']) || 0), 0),
+        ytdGP: data.reduce((sum, row) => sum + (parseFloat(row[' YTD GP $ ']) || 0), 0)
     };
+    
+    // Check for NaN or Garbage data in critical totals
+    if (isNaN(totals.ytdSales) || totals.ytdSales === 0) {
+        showDataErrorModal("Calculation Error", "Sales values contain text or invalid characters (NaN).");
+        throw new Error("ValidationFailed");
+    }
     
     totals.ytdChange = ((totals.ytdSales - totals.lytdSales) / totals.lytdSales * 100);
     totals.ytdGPPercent = (totals.ytdGP / totals.ytdSales * 100);
     
     const customers = data.map(row => {
-        const ytdSales = row[' YTD Sales $ '] || 0;
-        const lytdSales = row[' LYTD Sales $ '] || 0;
-        const mtdSales = row[' MTD Sales $ '] || 0;
+        const ytdSales = parseFloat(row[' YTD Sales $ ']) || 0;
+        const lytdSales = parseFloat(row[' LYTD Sales $ ']) || 0;
+        const mtdSales = parseFloat(row[' MTD Sales $ ']) || 0;
         const ytdChange = lytdSales > 0 ? ((ytdSales - lytdSales) / lytdSales * 100) : 0;
         
         let status = 'flat';
@@ -286,12 +387,11 @@ function analyzeData(data) {
         return {
             code: row['Customer Code'],
             name: (row['Name'] || '').trim(),
-            mtdSales: parseFloat(row[' MTD Sales $ ']) || 0,
-            ytdSales: parseFloat(row[' YTD Sales $ ']) || 0,
-            lytdSales: parseFloat(row[' LYTD Sales $ ']) || 0,
+            mtdSales: mtdSales,
+            ytdSales: ytdSales,
+            lytdSales: lytdSales,
             ytdChange: ytdChange,
             ytdGP: parseFloat(row[' YTD GP $ ']) || 0,
-            // Force these to numbers immediately
             ytdGPPercent: parseFloat(row['YTD GP %']) || 0,
             mtdGPPercent: parseFloat(row['MTD GP%']) || 0,
             status: status
@@ -312,10 +412,6 @@ function analyzeData(data) {
         lowMargin
     };
 }
-
-// Store analysis globally so we can export it
-let currentAnalysis = null;
-let currentDateInfo = null;
 
 function downloadReport() {
     if (!currentAnalysis) {
@@ -425,7 +521,6 @@ function renderDashboard(analysis, dateInfo) {
     
     output.innerHTML = `
         <div class="dashboard">
-            <!-- Period Badge & Download Button -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
                 <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);
                             padding: 10px 20px; border-radius: 8px; display: inline-block;">
@@ -448,7 +543,6 @@ function renderDashboard(analysis, dateInfo) {
                 </button>
             </div>
 
-            <!-- Performance Summary -->
             <div class="section">
                 <h2>Performance Summary</h2>
                 <div class="stats-grid">
@@ -473,7 +567,6 @@ function renderDashboard(analysis, dateInfo) {
                 </div>
             </div>
 
-            <!-- Charts -->
             <div class="section">
                 <h2>Visual Analytics</h2>
                 <div class="charts-grid">
@@ -492,7 +585,6 @@ function renderDashboard(analysis, dateInfo) {
                 </div>
             </div>
 
-            <!-- Priority Actions -->
             <div class="section">
                 <h2>⚠️ Priority Actions</h2>
                 
@@ -669,7 +761,6 @@ function renderCharts(analysis) {
                     },
                     {
                         label: 'Last Year',
-                        // Note: LY GP is estimated based on current GP% if not explicitly in data
                         data: [analysis.totals.lytdSales, analysis.totals.lytdSales * (analysis.totals.ytdGPPercent / 100)],
                         backgroundColor: '#334155',
                         borderRadius: 4
@@ -689,7 +780,6 @@ function renderCharts(analysis) {
     // 4. Margin Efficiency (Line Chart)
     const marginCtx = document.getElementById('marginChart');
     if (marginCtx) {
-        // Again, slicing to 10 to keep the line chart readable
         const topTenData = analysis.topCustomers.slice(0, 10);
 
         chartInstances.push(new Chart(marginCtx, {
