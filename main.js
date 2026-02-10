@@ -58,6 +58,17 @@ async function validateKeyWithAPI(key) {
 
 async function logUsage(key, action) {
     try {
+        // Get IP address from a free service
+        let ipAddress = null;
+        try {
+            const ipResponse = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            ipAddress = ipData.ip;
+        } catch (e) {
+            // If IP fetch fails, continue without it
+            ipAddress = 'unavailable';
+        }
+        
         await fetch(`${SUPABASE_URL}/rest/v1/usage_logs`, {
             method: 'POST',
             headers: {
@@ -70,7 +81,7 @@ async function logUsage(key, action) {
                 license_key: key,
                 action: action,
                 user_agent: navigator.userAgent,
-                // IP will be logged server-side
+                ip_address: ipAddress
             })
         });
     } catch (error) {
