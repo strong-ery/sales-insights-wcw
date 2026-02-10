@@ -186,6 +186,11 @@ async function handleFile(e) {
     }
     
     const file = e.target.files[0];
+    const fileName = file.name;
+    
+    // Extract date from filename
+    const dateInfo = extractDateFromFilename(fileName);
+    
     const reader = new FileReader();
     
     reader.onload = function(event) {
@@ -199,10 +204,53 @@ async function handleFile(e) {
         const cleanData = cleanSalesData(jsonData);
         const analysis = analyzeData(cleanData);
         
-        renderDashboard(analysis);
+        renderDashboard(analysis, dateInfo);
     };
     
     reader.readAsArrayBuffer(file);
+}
+
+function extractDateFromFilename(filename) {
+    // Try to extract date patterns like: PETER12.31.25.xlsx or PETER12_31_25.xlsx
+    // Pattern: NAME + MM.DD.YY or MM_DD_YY + .xlsx
+    
+    console.log('Extracting date from filename:', filename);
+    // Match dates with dots OR underscores
+    const match = filename.match(/(\d{1,2})[._](\d{1,2})[._](\d{2})/);
+    console.log('Regex match result:', match);
+    
+    if (match) {
+        const month = parseInt(match[1]);
+        const day = parseInt(match[2]);
+        let year = parseInt(match[3]);
+        
+        // Convert 2-digit year to 4-digit (25 -> 2025)
+        year = year < 50 ? 2000 + year : 1900 + year;
+        
+        const date = new Date(year, month - 1, day);
+        
+        return {
+            date: date,
+            formatted: date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            }),
+            shortDate: `${month}/${day}/${year}`,
+            periodEnd: date,
+            // Assume period is YTD (Jan 1 to this date)
+            periodStart: new Date(year, 0, 1)
+        };
+    }
+    
+    // Fallback if no date found in filename
+    return {
+        date: new Date(),
+        formatted: 'Unknown Date',
+        shortDate: 'N/A',
+        periodEnd: new Date(),
+        periodStart: new Date(new Date().getFullYear(), 0, 1)
+    };
 }
 
 function cleanSalesData(data) {
@@ -265,8 +313,110 @@ function analyzeData(data) {
     };
 }
 
-function renderDashboard(analysis) {
+// Store analysis globally so we can export it
+let currentAnalysis = null;
+let currentDateInfo = null;
+
+function downloadReport() {
+    if (!currentAnalysis) {
+        alert('No data to export. Please upload a file first.');
+        return;
+    }
+    
+    const wb = XLSX.utils.book_new();
+    
+    // --- Sheet 1: Summary ---
+    const summaryData = [
+        ['BigWeld Sales Analysis Report'],
+        ['Report Date:', currentDateInfo.formatted],
+        ['Period:', `${currentDateInfo.periodStart.toLocaleDateString('en-US')} - ${currentDateInfo.periodEnd.toLocaleDateString('en-US')}`],
+        [],
+        ['PERFORMANCE SUMMARY'],
+        ['Metric', 'Value'],
+        ['YTD Sales', `$${currentAnalysis.totals.ytdSales.toLocaleString('en-US', {minimumFractionDigits: 2})}`],
+        ['vs Last Year', `${currentAnalysis.totals.ytdChange >= 0 ? '+' : ''}${currentAnalysis.totals.ytdChange.toFixed(1)}%`],
+        ['YTD GP%', `${currentAnalysis.totals.ytdGPPercent.toFixed(1)}%`],
+        ['MTD Sales', `$${currentAnalysis.totals.mtdSales.toLocaleString('en-US', {minimumFractionDigits: 2})}`],
+        [],
+        ['ACCOUNT HEALTH'],
+        ['Growing Accounts', currentAnalysis.customers.filter(c => c.status === 'growing').length],
+        ['Flat Accounts', currentAnalysis.customers.filter(c => c.status === 'flat').length],
+        ['Declining Accounts', currentAnalysis.customers.filter(c => c.status === 'declining').length]
+    ];
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    
+    // Set column widths for Summary (Column A and B)
+    summarySheet['!cols'] = [{ wch: 25 }, { wch: 20 }];
+    
+    XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+    
+    // --- Sheet 2: All Customers ---
+    const allCustomersData = currentAnalysis.topCustomers.map((c, i) => ({
+        'Rank': i + 1,
+        'Customer': c.name,
+        'YTD Sales': c.ytdSales,
+        'vs LY %': c.ytdChange,
+        'GP %': c.ytdGPPercent,
+        'Status': c.status.toUpperCase()
+    }));
+    const allCustomersSheet = XLSX.utils.json_to_sheet(allCustomersData);
+    
+    // Column widths: Rank, Customer, Sales, Change, GP, Status
+    allCustomersSheet['!cols'] = [
+        { wch: 6 }, { wch: 40 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 12 }
+    ];
+    
+    XLSX.utils.book_append_sheet(wb, allCustomersSheet, 'All Customers');
+    
+    // --- Helper for formatting other sheets ---
+    const actionCols = [{ wch: 40 }, { wch: 15 }, { wch: 15 }];
+
+    // Sheet 3: Declining Accounts
+    if (currentAnalysis.declining.length > 0) {
+        const decliningData = currentAnalysis.declining.map(c => ({
+            'Customer': c.name,
+            'YTD Sales': c.ytdSales,
+            'Change vs LY %': c.ytdChange
+        }));
+        const decliningSheet = XLSX.utils.json_to_sheet(decliningData);
+        decliningSheet['!cols'] = actionCols;
+        XLSX.utils.book_append_sheet(wb, decliningSheet, 'Declining Accounts');
+    }
+    
+    // Sheet 4: No Sales This Month
+    if (currentAnalysis.noMTDSales.length > 0) {
+        const noMTDData = currentAnalysis.noMTDSales.map(c => ({
+            'Customer': c.name,
+            'YTD Sales': c.ytdSales,
+            'LY MTD': c.lytdSales
+        }));
+        const noMTDSheet = XLSX.utils.json_to_sheet(noMTDData);
+        noMTDSheet['!cols'] = actionCols;
+        XLSX.utils.book_append_sheet(wb, noMTDSheet, 'No Sales This Month');
+    }
+    
+    // Sheet 5: Low Margin Opportunities
+    if (currentAnalysis.lowMargin.length > 0) {
+        const lowMarginData = currentAnalysis.lowMargin.map(c => ({
+            'Customer': c.name,
+            'YTD Sales': c.ytdSales,
+            'GP %': c.ytdGPPercent
+        }));
+        const lowMarginSheet = XLSX.utils.json_to_sheet(lowMarginData);
+        lowMarginSheet['!cols'] = actionCols;
+        XLSX.utils.book_append_sheet(wb, lowMarginSheet, 'Low Margin');
+    }
+    
+    const fileName = `BigWeld_Report_${currentDateInfo.shortDate.replace(/\//g, '-')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+}
+
+function renderDashboard(analysis, dateInfo) {
     const output = document.getElementById('output');
+    
+    // Store analysis globally for export
+    currentAnalysis = analysis;
+    currentDateInfo = dateInfo;
     
     chartInstances.forEach(chart => chart.destroy());
     chartInstances = [];
@@ -275,6 +425,29 @@ function renderDashboard(analysis) {
     
     output.innerHTML = `
         <div class="dashboard">
+            <!-- Period Badge & Download Button -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+                <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);
+                            padding: 10px 20px; border-radius: 8px; display: inline-block;">
+                    <span style="color: #94a3b8; font-size: 0.85rem; margin-right: 10px;">📅 Report Period:</span>
+                    <span style="color: #3b82f6; font-weight: 600;">
+                        ${dateInfo.periodStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - 
+                        ${dateInfo.formatted}
+                    </span>
+                </div>
+                
+                <button onclick="downloadReport()" 
+                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+                               color: white; padding: 12px 24px; border: none; border-radius: 8px; 
+                               cursor: pointer; font-weight: 600; font-size: 14px;
+                               box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+                               transition: all 0.3s;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.5)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(16, 185, 129, 0.4)';">
+                    📊 Export to Excel
+                </button>
+            </div>
+
             <!-- Performance Summary -->
             <div class="section">
                 <h2>Performance Summary</h2>
