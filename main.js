@@ -291,6 +291,8 @@ async function handleFile(e) {
     };
     
     reader.readAsArrayBuffer(file);
+    
+    e.target.value = ''; //so the user can upload again without having to reload.
 }
 
 function extractDateFromFilename(filename) {
