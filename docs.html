@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigWeld Sales Analytics - Documentation</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #0b1120;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-gold: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .docs-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            padding: 40px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 30px 30px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .sidebar-header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .nav-section {
+            margin-bottom: 25px;
+        }
+
+        .nav-section-title {
+            padding: 0 30px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 10px 30px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-blue);
+        }
+
+        .nav-link.active {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-blue);
+            border-left-color: var(--accent-blue);
+        }
+
+        .content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 60px 80px;
+            max-width: 1200px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            transition: gap 0.2s;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+        }
+
+        .section {
+            margin-bottom: 60px;
+            scroll-margin-top: 30px;
+        }
+
+        .section h2 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            color: var(--text-main);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .section h3 {
+            font-size: 1.4rem;
+            margin: 30px 0 16px;
+            color: var(--text-main);
+        }
+
+        .section h4 {
+            font-size: 1.1rem;
+            margin: 24px 0 12px;
+            color: var(--accent-blue);
+        }
+
+        .section p {
+            margin-bottom: 16px;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .section ul, .section ol {
+            margin: 16px 0 16px 24px;
+            color: var(--text-muted);
+        }
+
+        .section li {
+            margin-bottom: 10px;
+        }
+
+        .section strong {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .info-box.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .info-box.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+        }
+
+        code {
+            background: var(--bg-code);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: var(--accent-blue);
+        }
+
+        pre {
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        thead {
+            background: var(--bg-code);
+        }
+
+        th {
+            padding: 14px;
+            text-align: left;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 14px;
+            color: var(--text-main);
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        tbody tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+            .content {
+                margin-left: 240px;
+                padding: 40px 40px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .content {
+                margin-left: 0;
+                padding: 30px 20px;
+            }
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .contact-button {
+            position: fixed;
+            top: 20px;
+            right: 40px;
+            background: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+            z-index: 1000;
+        }
+
+        .contact-button:hover {
+            background: #08132c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=dstrongbusiness@gmail.com" target="_blank" class="contact-button">Contact: dstrongbusiness@gmail.com</a>
+    <div class="docs-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>📊 BigWeld</h1>
+                <p>Sales Analytics Documentation</p>
+            </div>
+            
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-section-title">Getting Started</div>
+                    <a href="#quick-start" class="nav-link">Quick Start</a>
+                    <a href="#license" class="nav-link">License Activation</a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Using the Tool</div>
+                    <a href="#data-requirements" class="nav-link">Data Requirements</a>
+                    <a href="#uploading" class="nav-link">Uploading Files</a>
+                    <a href="#dashboard" class="nav-link">Understanding the Dashboard</a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Features</div>
+                    <a href="#metrics" class="nav-link">Metrics Explained</a>
+                    <a href="#charts" class="nav-link">Visual Analytics</a>
+                    <a href="#priority-actions" class="nav-link">Priority Actions</a>
+                    <a href="#export" class="nav-link">Export to Excel</a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Help</div>
+                    <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
+                    <a href="#support" class="nav-link">Contact & Support</a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <a href="index.html" class="back-link">← Back to Application</a>
+
+            <section id="quick-start" class="section">
+                <h2>Quick Start</h2>
+                <p>Get up and running with BigWeld Sales Analytics in minutes.</p>
+                
+                <h3>1. Activate Your License</h3>
+                <p>When you first open the application and attempt to upload a file, you'll be prompted to enter your license key.<br><br>Contact <strong>Dylan Strong</strong> to obtain a valid license.</p>
+                
+                <div class="info-box success">
+                    <div class="info-box-title">✓ Trial Available</div>
+                    <p>A temporary demo license is available for testing. Contact <strong>Dylan Strong</strong> for access.</p>
+                </div>
+
+                <h3>2. Upload Your Sales Data</h3>
+                <p>Click the upload area or drag and drop your Excel file. The tool accepts <code>.xlsx</code> and <code>.xls</code> formats.</p>
+
+                <h3>3. Review Your Dashboard</h3>
+                <p>Within seconds, you'll see comprehensive analytics including performance summaries, visual charts, and actionable insights.</p>
+
+                <h3>4. Export Your Report</h3>
+                <p>Click the "Export to Excel" button to download a multi-sheet workbook with all your analysis results.</p>
+            </section>
+
+            <section id="license" class="section">
+                <h2>License Activation</h2>
+                
+                <h3>How Licensing Works</h3>
+                <p>BigWeld uses a secure license key system to control access. Each license key is validated against our secure database and tracks usage for compliance and support purposes.</p>
+
+                <h4>Activating Your License</h4>
+                <ol>
+                    <li>Open the BigWeld Sales Analytics tool in your browser</li>
+                    <li>Try uploading a file.</li>
+                    <li>Enter your license key in the modal that appears</li>
+                    <li>Click "Activate License"</li>
+                    <li>If valid, you'll be redirected to the upload screen again.</li>
+                    <li>Your license is validated and stored!</li>
+                </ol>
+
+                <div class="info-box warning">
+                    <div class="info-box-title">⚠️ Invalid License</div>
+                    <p>If you see an error message, double-check your license key for typos. License keys are case-sensitive. Contact support if issues persist.</p>
+                </div>
+
+                <h4>License Storage</h4>
+                <p>Your license key is stored securely in your browser's local storage. You won't need to re-enter it unless you clear your browser data or switch devices.</p>
+
+                <h4>Privacy & Security</h4>
+                <p>License validation logs only track:</p>
+                <ul>
+                    <li>License key (for validation)</li>
+                    <li>Timestamp of usage</li>
+                    <li>Anonymous browser information</li>
+                </ul>
+                <p><strong>Your sales data is never uploaded or stored on our servers.</strong> All analysis happens locally in your browser.</p>
+            </section>
+
+            <section id="data-requirements" class="section">
+                <h2>Data Requirements</h2>
+                <p>BigWeld expects your Excel file to follow a specific format to ensure accurate analysis.<br><br>It was designed around the pre-existing data structure for outside salesmen to make things easier.</p>
+
+                <h3>Required Columns</h3>
+                <p>Your spreadsheet must include these column headers (exact spelling and capitalization matter):</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Description</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Salesman No</code></td>
+                            <td>Sales representative identifier</td>
+                            <td>10</td>
+                        </tr>
+                        <tr>
+                            <td><code>Customer Code</code></td>
+                            <td>Unique customer identifier</td>
+                            <td>000001</td>
+                        </tr>
+                        <tr>
+                            <td><code>Name</code></td>
+                            <td>Customer business name</td>
+                            <td>Imaginary Corporation</td>
+                        </tr>
+                        <tr>
+                            <td><code>YTD Sales $</code></td>
+                            <td>Year-to-date sales amount</td>
+                            <td>50230.00</td>
+                        </tr>
+                        <tr>
+                            <td><code>LYTD Sales $</code></td>
+                            <td>Last year to date sales</td>
+                            <td>45000.00</td>
+                        </tr>
+                        <tr>
+                            <td><code>MTD Sales $</code></td>
+                            <td>Month-to-date sales amount</td>
+                            <td>8500.00</td>
+                        </tr>
+                        <tr>
+                            <td><code>YTD GP %</code></td>
+                            <td>Year-to-date gross profit %</td>
+                            <td>28.5</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Column Name Alternatives</h3>
+                <p>The tool is flexible and accepts common variations:</p>
+                <ul>
+                    <li><code>YTD Sales $</code> or <code>YTD Sales</code></li>
+                    <li><code>YTD GP %</code>, <code>YTD GP%</code>, or <code>GP%</code></li>
+                    <li><code>MTD Sales $</code> or <code>MTD Sales</code></li>
+                </ul>
+
+                <h3>Example Data Format</h3>
+                <pre><code>Salesman No | Customer Code | Name                  | YTD Sales $ | LYTD Sales $ | MTD Sales $ | YTD GP %
+10          | 000001        | Example Customer 1    | 50230.00    | 45000.00     | 8500.00     | 28.5
+10          | 000002        | Example Customer 2    | 12400.50    | 15000.00     | 0.00        | 15.2
+10          | 000003        | Example Customer 3    | 95600.00    | 82000.00     | 12300.00    | 32.1</code></pre>
+
+                <div class="info-box warning">
+                    <div class="info-box-title">⚠️ Common Issues</div>
+                    <ul style="margin: 10px 0 0 20px;">
+                        <li>Ensure column headers are in the first row</li>
+                        <li>Remove any "Total" or "Grand Total" rows</li>
+                        <li>Make sure numeric columns don't contain text</li>
+                        <li>Watch out for currency symbols ($ are okay, but avoid mixing formats)</li>
+                    </ul>
+                </div>
+
+                <h3>File Naming Convention</h3>
+                <p>For accurate date detection, name your files using this format:</p>
+                <code>Sales_MM_DD_YY.xlsx</code>
+                <p style="margin-top: 10px;"><strong>Examples:</strong></p>
+                <ul>
+                    <li><code>Sales_02_11_26.xlsx</code> → February 11, 2026</li>
+                    <li><code>Report_12_31_25.xlsx</code> → December 31, 2025</li>
+                </ul>
+                <p>The tool will extract the date to display your reporting period correctly.</p>
+            </section>
+
+            <section id="uploading" class="section">
+                <h2>Uploading Files</h2>
+                
+                <h3>Two Ways to Upload</h3>
+                <ol>
+                    <li><strong>Click to Browse:</strong> Click anywhere in the upload area to open a file browser</li>
+                    <li><strong>Drag & Drop:</strong> Drag your Excel file directly onto the upload area</li>
+                </ol>
+
+                <h3>What Happens Next?</h3>
+                <p>After uploading, the tool will:</p>
+                <ol>
+                    <li>Validate your license key</li>
+                    <li>Parse your Excel file</li>
+                    <li>Clean and validate the data</li>
+                    <li>Perform calculations and analysis</li>
+                    <li>Generate your interactive dashboard (typically within 1-2 seconds)</li>
+                </ol>
+
+                <div class="info-box">
+                    <div class="info-box-title">ℹ️ Data Privacy</div>
+                    <p>All processing happens in your browser. Your sales data <strong>never leaves your computer</strong> and is not uploaded to any server.</p>
+                </div>
+
+                <h3>Error Messages</h3>
+                <p>If the upload fails, you'll see a detailed error modal explaining the issue. Common problems include:</p>
+                <ul>
+                    <li><strong>Empty file:</strong> The spreadsheet has no data rows</li>
+                    <li><strong>Missing headers:</strong> Required columns are not present</li>
+                    <li><strong>Invalid data:</strong> Text in numeric columns or corrupted values</li>
+                </ul>
+                <p>The error modal will show you the expected format to help you fix the issue.</p>
+            </section>
+
+            <section id="dashboard" class="section">
+                <h2>Understanding the Dashboard</h2>
+                <p>Once your data is processed, you'll see a comprehensive dashboard with multiple sections.</p>
+
+                <h3>Performance Summary</h3>
+                <p>The top section displays four key metrics in large stat boxes:</p>
+                <ul>
+                    <li><strong>YTD Sales:</strong> Total year-to-date sales across all customers</li>
+                    <li><strong>vs Last Year:</strong> Percentage change compared to last year's performance</li>
+                    <li><strong>YTD GP%:</strong> Overall gross profit margin percentage</li>
+                    <li><strong>MTD Sales:</strong> Month-to-date sales for the current period</li>
+                </ul>
+
+                <div class="info-box">
+                    <div class="info-box-title">ℹ️ Info Icons</div>
+                    <p>Hover over the small "i" icon in each stat box to see exactly how that metric is calculated.</p>
+                </div>
+
+                <h3>Visual Analytics</h3>
+                <p>Five interactive charts provide visual insights:</p>
+                <ul>
+                    <li><strong>Top 10 Revenue Drivers:</strong> Bar chart showing your highest-grossing customers</li>
+                    <li><strong>Year over Year Comparison:</strong> This year vs last year for revenue and profit</li>
+                    <li><strong>Overall Account Health:</strong> Pie chart breaking down growing, flat, and declining accounts</li>
+                    <li><strong>Top 10 Margin Performance:</strong> Line chart tracking GP% for top customers</li>
+                    <li><strong>Lowest 10 Margin Performance:</strong> Line chart highlighting accounts with low margins</li>
+                </ul>
+
+                <h3>Priority Actions</h3>
+                <p>This section highlights accounts that need attention:</p>
+                <ul>
+                    <li><strong>Declining Accounts:</strong> Customers with >5% decrease vs last year</li>
+                    <li><strong>No Sales This Month:</strong> Active customers who haven't purchased this month</li>
+                    <li><strong>Low Margin Opportunities:</strong> High-volume accounts (<$10k+) with GP% below 25%</li>
+                </ul>
+
+                <h3>All Customers Table</h3>
+                <p>A sortable, searchable table listing all customers ranked by YTD sales. Use the search bar to quickly find specific accounts.</p>
+            </section>
+
+            <section id="metrics" class="section">
+                <h2>Metrics Explained</h2>
+                <p>Understanding how each metric is calculated helps you make better business decisions.</p>
+
+                <h3>Sales Metrics</h3>
+                
+                <h4>YTD Sales (Year-to-Date Sales)</h4>
+                <p>Total sales revenue from January 1 of the current year through the report date.</p>
+                <p><strong>Formula:</strong> Sum of all <code>YTD Sales $</code> values</p>
+
+                <h4>MTD Sales (Month-to-Date Sales)</h4>
+                <p>Total sales revenue from the 1st of the current month through the report date.</p>
+                <p><strong>Formula:</strong> Sum of all <code>MTD Sales $</code> values</p>
+
+                <h4>vs Last Year (Year-over-Year Change)</h4>
+                <p>Percentage change in sales compared to the same period last year.</p>
+                <p><strong>Formula:</strong></p>
+                <pre><code>If LYTD Sales > 0:
+    ((YTD Sales - LYTD Sales) / LYTD Sales) × 100
+
+If LYTD Sales = 0 and YTD Sales > 0:
+    100% (infinite growth)
+
+If both = 0:
+    0% (no change)</code></pre>
+
+                <h3>Profitability Metrics</h3>
+
+                <h4>YTD GP% (Gross Profit Percentage)</h4>
+                <p>The percentage of revenue retained as gross profit after direct costs.</p>
+                <p><strong>Formula:</strong></p>
+                <pre><code>If YTD Sales > 0:
+    (YTD Gross Profit / YTD Sales) × 100
+
+If YTD Sales = 0:
+    0%</code></pre>
+
+                <h3>Account Health Status</h3>
+                <p>Each customer is automatically categorized based on their year-over-year performance:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Criteria</th>
+                            <th>Meaning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong style="color: var(--accent-green);">GROWING</strong></td>
+                            <td>YoY change > +5%</td>
+                            <td>Account is expanding significantly</td>
+                        </tr>
+                        <tr>
+                            <td><strong style="color: var(--accent-gold);">FLAT</strong></td>
+                            <td>YoY change between -5% and +5%</td>
+                            <td>Account is stable with minimal change</td>
+                        </tr>
+                        <tr>
+                            <td><strong style="color: var(--accent-red);">DECLINING</strong></td>
+                            <td>YoY change < -5%</td>
+                            <td>Account is shrinking and needs attention</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="info-box-title">📊 Future Enhancement</div>
+                    <p>Configurable thresholds for status categorization are planned for a future update, allowing you to customize what constitutes "growing" vs "declining" for your business. The default thresholds are industry standard based on my research.</p>
+                </div>
+            </section>
+
+            <section id="charts" class="section">
+                <h2>Visual Analytics</h2>
+                <p>The dashboard includes five interactive charts powered by Chart.js.</p>
+
+                <h3>How to Interact with Charts</h3>
+                <ul>
+                    <li><strong>Hover:</strong> Move your mouse over data points to see exact values</li>
+                    <li><strong>Zoom:</strong> Charts are responsive and scale to your screen size</li>
+                </ul>
+
+                <h3>Chart Descriptions</h3>
+
+                <h4>Top 10 Revenue Drivers</h4>
+                <p>Horizontal bar chart displaying your ten highest-grossing customers by YTD sales. Quickly identify where most of your revenue comes from.</p>
+
+                <h4>Year over Year Comparison</h4>
+                <p>Grouped bar chart comparing this year's total revenue and gross profit against last year's figures. Visualizes overall business growth at a glance.</p>
+
+                <h4>Overall Account Health</h4>
+                <p>Doughnut chart showing the distribution of customers across the three status categories (Growing, Flat, Declining). Provides a quick snapshot of portfolio health.</p>
+
+                <h4>Top 10 - Gross Profit %</h4>
+                <p>Line chart tracking margin performance for your top ten revenue-generating customers. Helps identify if high-volume accounts are also profitable.</p>
+
+                <h4>Lowest 10 - Gross Profit %</h4>
+                <p>Line chart highlighting your ten lowest-margin accounts. Use this to identify pricing or cost issues that need addressing.</p>
+            </section>
+
+            <section id="priority-actions" class="section">
+                <h2>Priority Actions</h2>
+                <p>This section helps you identify accounts that require immediate attention or strategic intervention.</p>
+
+                <h3>Declining Accounts</h3>
+                <p><strong>Definition:</strong> Customers with year-over-year sales decline greater than 5%.</p>
+                <p><strong>Why it matters:</strong> These accounts represent potential churn or lost market share. Early intervention can often reverse the trend.</p>
+                <p><strong>Recommended actions:</strong></p>
+                <ul>
+                    <li>Schedule a check-in call to understand pain points</li>
+                    <li>Review recent orders for pattern changes</li>
+                    <li>Check if competitors have made inroads</li>
+                    <li>Evaluate pricing or service issues</li>
+                </ul>
+
+                <h3>No Sales This Month</h3>
+                <p><strong>Definition:</strong> Customers with zero MTD sales who had sales in the same period last year.</p>
+                <p><strong>Why it matters:</strong> Silent accounts can quickly become lost accounts. A lapse in orders might indicate dissatisfaction, a switch to competitors, or simply timing.</p>
+                <p><strong>Recommended actions:</strong></p>
+                <ul>
+                    <li>Reach out with a friendly check-in</li>
+                    <li>Offer a special promotion or new product showcase</li>
+                    <li>Verify contact information is still current</li>
+                    <li>Ask if purchasing patterns have changed</li>
+                </ul>
+
+                <h3>Low Margin Opportunities</h3>
+                <p><strong>Definition:</strong> Customers with >$10,000 in YTD sales but gross profit margin below 25%.</p>
+                <p><strong>Why it matters:</strong> High-volume, low-margin accounts can drain resources without contributing adequately to profitability. These represent opportunities to renegotiate pricing or adjust product mix.</p>
+                <p><strong>Recommended actions:</strong></p>
+                <ul>
+                    <li>Analyze their purchase mix. Are they buying only low-margin items?</li>
+                    <li>Consider tiered pricing or volume discounts that improve margin</li>
+                    <li>Upsell higher-margin products or value-added services</li>
+                    <li>Evaluate if the account is strategically worth maintaining at current margins</li>
+                </ul>
+
+                <div class="info-box">
+                    <div class="info-box-title">💡 Pro Tip</div>
+                    <p>By default, tables show only the top 5 accounts in each category. Click "Show All" to expand the full list. This keeps the dashboard clean while giving you access to complete data when needed.</p>
+                </div>
+            </section>
+
+            <section id="export" class="section">
+                <h2>Export to Excel</h2>
+                <p>Generate a comprehensive Excel workbook with all your analysis results for offline review, sharing, or archiving.</p>
+
+                <h3>How to Export</h3>
+                <ol>
+                    <li>Click the <strong>"📊 Export to Excel"</strong> button at the top of the dashboard</li>
+                    <li>Your browser will download a file named <code>BigWeld_Report_MM-DD-YYYY.xlsx</code></li>
+                    <li>Open the file in Excel, Google Sheets, or any spreadsheet application</li>
+                </ol>
+
+                <h3>What's Included</h3>
+                <p>The exported workbook contains multiple sheets:</p>
+
+                <h4>Sheet 1: Summary</h4>
+                <p>Executive overview with key metrics:</p>
+                <ul>
+                    <li>Report date and period</li>
+                    <li>YTD Sales, YoY change, GP%</li>
+                    <li>MTD Sales</li>
+                    <li>Account health breakdown (Growing, Flat, Declining counts)</li>
+                </ul>
+
+                <h4>Sheet 2: All Customers</h4>
+                <p>Complete customer list ranked by YTD sales, including:</p>
+                <ul>
+                    <li>Rank</li>
+                    <li>Customer name</li>
+                    <li>YTD Sales</li>
+                    <li>vs LY %</li>
+                    <li>GP %</li>
+                    <li>Status</li>
+                </ul>
+
+                <h4>Sheet 3: Declining Accounts</h4>
+                <p>Filtered list of customers with declining sales (if any exist), sorted by worst decline first.</p>
+
+                <h4>Sheet 4: No Sales This Month</h4>
+                <p>Customers with zero MTD sales but who purchased last year (if any exist).</p>
+
+                <h4>Sheet 5: Low Margin</h4>
+                <p>High-volume accounts with margins below 25% (if any exist), sorted by lowest margin first.</p>
+
+                <div class="info-box success">
+                    <div class="info-box-title">✓ Ready to Share</div>
+                    <p>The exported Excel file is professionally formatted and ready to share with management, sales teams, or for inclusion in presentations.</p>
+                </div>
+
+                <h3>File Format Notes</h3>
+                <ul>
+                    <li>Column widths are pre-sized for readability</li>
+                    <li>Numeric values retain full precision (no rounding in export)</li>
+                    <li>Currency values formatted as numbers (no $ symbols in cells for easier calculations)</li>
+                    <li>Compatible with Excel 2010 and later, Google Sheets, LibreOffice Calc</li>
+                </ul>
+            </section>
+
+            <section id="troubleshooting" class="section">
+                <h2>Troubleshooting</h2>
+                <p>Common issues and how to resolve them.</p>
+
+                <h3>License Issues</h3>
+
+                <h4>"Invalid license key" error</h4>
+                <p><strong>Causes:</strong></p>
+                <ul>
+                    <li>Typo in the license key (keys are case-sensitive)</li>
+                    <li>License has expired</li>
+                    <li>License has been deactivated (we will never do this without contacting you)</li>
+                    <li>Network connection issue preventing validation</li>
+                </ul>
+                <p><strong>Solutions:</strong></p>
+                <ul>
+                    <li>Double-check the license key for typos</li>
+                    <li>Copy-paste the key instead of typing manually</li>
+                    <li>Contact Dylan Strong or your sales manager for license status</li>
+                    <li>Check your internet connection</li>
+                </ul>
+
+                <h3>File Upload Issues</h3>
+
+                <h4>"The file appears to be empty"</h4>
+                <p><strong>Cause:</strong> The Excel file has no data rows, or the first sheet is empty.</p>
+                <p><strong>Solution:</strong> Ensure your file has data in the first sheet (tab). The tool reads the first sheet by default.</p>
+
+                <h4>"No valid customer records found"</h4>
+                <p><strong>Cause:</strong> Required column headers are missing or misspelled.</p>
+                <p><strong>Solution:</strong> Check that your file includes these columns with exact spelling:</p>
+                <ul>
+                    <li><code>Customer Code</code></li>
+                    <li><code>Name</code></li>
+                    <li><code>YTD Sales $</code> (or <code>YTD Sales</code>)</li>
+                    <li><code>YTD GP %</code></li>
+                </ul>
+                <p>Refer to the <a href="#data-requirements" style="color: var(--accent-blue);">Data Requirements</a> section for full details.</p>
+
+                <h4>"Data Error: No sales records could be read"</h4>
+                <p><strong>Cause:</strong> All numeric columns contain zero or invalid values.</p>
+                <p><strong>Solution:</strong> Verify that sales columns contain actual numbers, not text or formulas that evaluate to zero.</p>
+
+                <h3>Dashboard Display Issues</h3>
+
+                <h4>Charts not appearing</h4>
+                <p><strong>Cause:</strong> Browser compatibility issue or JavaScript error.</p>
+                <p><strong>Solution:</strong></p>
+                <ul>
+                    <li>Try refreshing the page (F5 or Cmd+R)</li>
+                    <li>Clear your browser cache</li>
+                    <li>Try a different modern browser (Chrome, Firefox, Edge, Safari)</li>
+                    <li>Disable browser extensions that might interfere</li>
+                </ul>
+
+                <h4>Incorrect date in report</h4>
+                <p><strong>Cause:</strong> File name doesn't match expected format.</p>
+                <p><strong>Solution:</strong> Rename your file using the format <code>Name_MM_DD_YY.xlsx</code> (e.g., <code>Sales_02_11_26.xlsx</code>).</p>
+
+                <h3>Export Issues</h3>
+
+                <h4>"No data to export" message</h4>
+                <p><strong>Cause:</strong> No file has been uploaded yet, or previous upload failed.</p>
+                <p><strong>Solution:</strong> Upload a valid sales data file before attempting to export.</p>
+
+                <h3>Performance Issues</h3>
+
+                <h4>Slow loading or unresponsive</h4>
+                <p><strong>Cause:</strong> Very large files (10,000+ rows) or limited browser resources.</p>
+                <p><strong>Solutions:</strong></p>
+                <ul>
+                    <li>Close other browser tabs to free up memory</li>
+                    <li>Split large files into smaller segments if possible</li>
+                    <li>Use a desktop browser instead of mobile for large datasets</li>
+                </ul>
+
+                <div class="info-box">
+                    <div class="info-box-title">ℹ️ Still Having Issues?</div>
+                    <p>See the <a href="#support" style="color: var(--accent-blue);">Contact & Support</a> section for how to get help.</p>
+                </div>
+            </section>
+
+
+            <section id="support" class="section">
+                <h2>Contact & Support</h2>
+                
+                <h3>Getting Help</h3>
+                <p>For technical issues, bug reports, or questions about using the tool, contact:</p>
+                
+                <div class="info-box">
+                    <div class="info-box-title">📧 Technical Support</div>
+                    <p><strong>Developer:</strong> Dylan Strong<br>
+                    <strong>Email:</strong> dstrongbusiness@gmail.com</p>
+                </div>
+
+                <h3>License & Billing</h3>
+                <p>For questions about licenses, renewals, or pricing:</p>
+                <ul>
+                    <li>Contact Dylan Strong at <strong>dstrongbusiness@gmail.com</strong>.</li>
+                </ul>
+
+                <h3>Feature Requests</h3>
+                <p>Have an idea for a new feature or improvement? We'd love to hear it!</p>
+                <p><strong>Note:</strong> Bug fixes and maintenance are included with your license. Major new features may be available as paid upgrades depending on development scope.</p>
+
+                <h3>What to Include in a Support Request</h3>
+                <p>To help us resolve your issue quickly, please provide:</p>
+                <ul>
+                    <li>A clear description of the problem</li>
+                    <li>What you were trying to do when the issue occurred</li>
+                    <li>Any error messages you saw (screenshot if possible)</li>
+                    <li>Browser name and version (e.g., "Chrome 120")</li>
+                    <li>Operating system (Windows, Mac, Linux)</li>
+                </ul>
+
+                <div class="info-box warning">
+                    <div class="info-box-title">🔒 Data Privacy Reminder</div>
+                    <p>If you need to share sample data for troubleshooting, please anonymize sensitive information (customer names, actual sales figures) before sending. We only need the data structure, not real business data.</p>
+                </div>
+
+                <h3>Response Times</h3>
+                <p>Support requests are typically answered within:</p>
+                <ul>
+                    <li><strong>Bug reports:</strong> 1-2 business days</li>
+                    <li><strong>License issues:</strong> Same business day (usually within hours)</li>
+                    <li><strong>Feature requests:</strong> 3-5 business days for initial assessment</li>
+                </ul>
+
+                <h3>Privacy & Security</h3>
+                <p>Your data security is our priority:</p>
+                <ul>
+                    <li>All sales data processing happens locally in your browser</li>
+                    <li>No sales data is uploaded to our servers</li>
+                    <li>License validation uses encrypted HTTPS connections</li>
+                    <li>Only minimal usage metadata is logged (timestamp, license key, browser info)</li>
+                </ul>
+                <p>For full privacy details, see the privacy information link in the application footer.</p>
+            </section>
+
+            <div style="border-top: 1px solid var(--border-color); padding-top: 40px; margin-top: 60px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                <p>BigWeld Sales Analytics • Documentation v1.0 • Last updated February 2026</p>
+                <p style="margin-top: 10px;">Built by Dylan Strong for Western Canada Welding Products</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    document.querySelectorAll('.nav-link').forEach(link => {
+                        link.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        const sections = document.querySelectorAll('.section');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
