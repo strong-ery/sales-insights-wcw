@@ -584,20 +584,24 @@ function renderDashboard(analysis, dateInfo) {
                 <h2>Performance Summary</h2>
                 <div class="stats-grid">
                     <div class="stat-box">
+                        <span tabindex="0" class="info-icon" data-tooltip="Sum of all customers' Year-to-Date Sales (YTD Sales column).">i</span>
                         <div class="stat-label">YTD Sales</div>
                         <div class="stat-value">$${analysis.totals.ytdSales.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                     </div>
                     <div class="stat-box">
+                        <span tabindex="0" class="info-icon" data-tooltip="Percent change vs LY = if LY>0 then ((YTD - LY)/LY)×100; if LY=0 then 100% when YTD>0, else 0%.">i</span>
                         <div class="stat-label">vs Last Year</div>
                         <div class="stat-value" style="color: ${statusColor}">
                             ${analysis.totals.ytdChange >= 0 ? '+' : ''}${analysis.totals.ytdChange.toFixed(1)}%
                         </div>
                     </div>
                     <div class="stat-box">
+                        <span tabindex="0" class="info-icon" data-tooltip="Gross Profit % = (YTD Gross Profit / YTD Sales) × 100. Shows 0 if YTD Sales is 0.">i</span>
                         <div class="stat-label">YTD GP%</div>
                         <div class="stat-value">${analysis.totals.ytdGPPercent.toFixed(1)}%</div>
                     </div>
                     <div class="stat-box">
+                        <span tabindex="0" class="info-icon" data-tooltip="Sum of Month-to-Date Sales for the current period (MTD Sales column).">i</span>
                         <div class="stat-label">MTD Sales</div>
                         <div class="stat-value">$${analysis.totals.mtdSales.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                     </div>
@@ -613,11 +617,16 @@ function renderDashboard(analysis, dateInfo) {
                     <div class="chart-container">
                         <canvas id="performanceChart"></canvas>
                     </div>
+                    <div class="chart-container chart-center">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+                <div class="charts-grid-full">
                     <div class="chart-container">
-                        <canvas id="marginChart"></canvas>
+                        <canvas id="topGPChart"></canvas>
                     </div>
                     <div class="chart-container">
-                        <canvas id="statusChart"></canvas>
+                        <canvas id="bottomGPChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -822,17 +831,17 @@ function renderCharts(analysis) {
         }));
     }
 
-    // 4. Margin Efficiency (Line Chart)
-    const marginCtx = document.getElementById('marginChart');
-    if (marginCtx) {
+    // 4. Top 10 Margin Performance (Line Chart)
+    const topGPCtx = document.getElementById('topGPChart');
+    if (topGPCtx) {
         const topTenData = analysis.topCustomers.slice(0, 10);
 
-        chartInstances.push(new Chart(marginCtx, {
+        chartInstances.push(new Chart(topGPCtx, {
             type: 'line',
             data: {
-                labels: topTenData.map(c => c.name.substring(0, 10)),
+                labels: topTenData.map(c => c.name.substring(0, 12)),
                 datasets: [{
-                    label: 'GP %',
+                    label: 'Top 10 GP %',
                     data: topTenData.map(c => c.ytdGPPercent),
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -848,7 +857,7 @@ function renderCharts(analysis) {
                 ...commonOptions,
                 plugins: {
                     ...commonOptions.plugins,
-                    title: { display: true, text: 'Margin Efficiency (Top 10)', align: 'start', color: '#f1f5f9', font: {size: 16} }
+                    title: { display: true, text: 'Top 10 - Gross Profit %', align: 'start', color: '#f1f5f9', font: {size: 16} }
                 },
                 scales: {
                     y: { ...commonOptions.scales.y, beginAtZero: true }
@@ -857,7 +866,42 @@ function renderCharts(analysis) {
         }));
     }
 
-    // 5. Account Health (Doughnut Chart)
+    // 5. Lowest 10 Margin Performance (Line Chart)
+    const bottomGPCtx = document.getElementById('bottomGPChart');
+    if (bottomGPCtx) {
+        const lowestTenData = [...analysis.customers].sort((a, b) => a.ytdGPPercent - b.ytdGPPercent).slice(0, 10);
+
+        chartInstances.push(new Chart(bottomGPCtx, {
+            type: 'line',
+            data: {
+                labels: lowestTenData.map(c => c.name.substring(0, 12)),
+                datasets: [{
+                    label: 'Lowest 10 GP %',
+                    data: lowestTenData.map(c => c.ytdGPPercent),
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#0f172a',
+                    pointBorderColor: '#ef4444',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: { display: true, text: 'Lowest 10 - Gross Profit %', align: 'start', color: '#f1f5f9', font: {size: 16} }
+                },
+                scales: {
+                    y: { ...commonOptions.scales.y, beginAtZero: true }
+                }
+            }
+        }));
+    }
+
+    // 6. Account Health (Doughnut Chart)
     const statusCtx = document.getElementById('statusChart');
     if (statusCtx) {
         const statusCounts = {
@@ -880,8 +924,7 @@ function renderCharts(analysis) {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 2,
+                maintainAspectRatio: false,
                 cutout: '70%',
                 plugins: {
                     legend: { position: 'right', labels: { color: '#f1f5f9', usePointStyle: true } },

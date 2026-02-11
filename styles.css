@@ -83,6 +83,7 @@ body {
     padding: 24px;
     border-radius: 12px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    position: relative;
 }
 
 .stat-label {
@@ -122,8 +123,15 @@ h3 {
 
 .charts-grid {
     display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+}
+
+.charts-grid-full {
+    display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 25px;
+    margin-top: 25px;
 }
 
 .chart-container {
@@ -135,6 +143,22 @@ h3 {
     
     height: 320px; 
     position: relative;
+}
+
+.chart-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+    height: 320px; /* allow larger canvas */
+}
+
+.chart-center canvas {
+    width: 440px !important; /* 200% of previous 220px */
+    height: 440px !important;
+    max-width: none !important;
+    max-height: none !important;
 }
 
 table {
@@ -319,4 +343,60 @@ td:nth-child(n+2) {
 .search-wrapper input:focus {
     outline: none;
     border-color: #3b82f6;
+}
+
+/* Inline info icon with CSS tooltip used across the dashboard */
+.info-icon {
+    display: inline-block;
+    margin-left: 8px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.8);
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 18px;
+    text-align: center;
+    cursor: default;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.03);
+}
+.info-icon:focus { outline: none; }
+.info-icon::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: #0f172a;
+    color: var(--text-muted);
+    padding: 8px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    border: 1px solid var(--border-color);
+    z-index: 1000;
+}
+.info-icon:hover::after,
+.info-icon:focus::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* When info-icon lives inside stat-box, pin to top-right */
+.stat-box > .info-icon {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    font-size: 12px;
+    margin-left: 0;
+    background: rgba(15,23,42,0.6);
+    border: 1px solid rgba(255,255,255,0.03);
 }
