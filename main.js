@@ -924,7 +924,7 @@ function renderCharts(analysis) {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: true,
                 cutout: '70%',
                 plugins: {
                     legend: { position: 'right', labels: { color: '#f1f5f9', usePointStyle: true } },

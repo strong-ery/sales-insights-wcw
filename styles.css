@@ -155,8 +155,7 @@ h3 {
 }
 
 .chart-center canvas {
-    width: 440px !important; /* 200% of previous 220px */
-    height: 440px !important;
+    height: 320px !important;
     max-width: none !important;
     max-height: none !important;
 }
