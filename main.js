@@ -618,6 +618,7 @@ function renderDashboard(analysis, dateInfo) {
                         <canvas id="performanceChart"></canvas>
                     </div>
                     <div class="chart-container chart-center">
+                        <span class="chart-container-title">Overall Account Health</span>
                         <canvas id="statusChart"></canvas>
                     </div>
                 </div>
@@ -901,7 +902,7 @@ function renderCharts(analysis) {
         }));
     }
 
-    // 6. Account Health (Doughnut Chart)
+    // 6. Account Health (Doughnut Chart) - NO built-in title, using custom HTML title
     const statusCtx = document.getElementById('statusChart');
     if (statusCtx) {
         const statusCounts = {
@@ -928,7 +929,7 @@ function renderCharts(analysis) {
                 cutout: '70%',
                 plugins: {
                     legend: { position: 'right', labels: { color: '#f1f5f9', usePointStyle: true } },
-                    title: { display: true, text: 'Overall Account Health', align: 'start', color: '#f1f5f9', font: {size: 16} }
+                    title: { display: false }  // DISABLED - using custom HTML title instead
                 }
             }
         }));
