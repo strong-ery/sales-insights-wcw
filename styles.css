@@ -109,7 +109,6 @@ h2 {
     font-size: 1.25rem;
     margin-bottom: 20px;
     padding-left: 10px;
-    /*border-left: 4px solid var(--accent-blue);*/
     color: var(--text-main);
 }
 
@@ -145,7 +144,6 @@ h3 {
     position: relative;
 }
 
-/* Custom title styling for chart containers */
 .chart-container-title {
     color: #f1f5f9;
     font-size: 16px;
@@ -352,7 +350,6 @@ td:nth-child(n+2) {
     border-color: #3b82f6;
 }
 
-/* Inline info icon with CSS tooltip used across the dashboard */
 .info-icon {
     display: inline-block;
     margin-left: 8px;
@@ -394,7 +391,6 @@ td:nth-child(n+2) {
     transform: translateX(-50%) translateY(0);
 }
 
-/* When info-icon lives inside stat-box, pin to top-right */
 .stat-box > .info-icon {
     position: absolute;
     top: 12px;

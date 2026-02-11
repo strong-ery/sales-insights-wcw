@@ -902,7 +902,7 @@ function renderCharts(analysis) {
         }));
     }
 
-    // 6. Account Health (Doughnut Chart) - NO built-in title, using custom HTML title
+    // 6. Account Health (Doughnut Chart)
     const statusCtx = document.getElementById('statusChart');
     if (statusCtx) {
         const statusCounts = {
@@ -929,7 +929,7 @@ function renderCharts(analysis) {
                 cutout: '70%',
                 plugins: {
                     legend: { position: 'right', labels: { color: '#f1f5f9', usePointStyle: true } },
-                    title: { display: false }  // DISABLED - using custom HTML title instead
+                    title: { display: false }
                 }
             }
         }));
